@@ -58,9 +58,9 @@ const COMPONENT_SPECIFIER_RENAMES: Record<string, SpecifierRenameRule> = {
 
 const COMPONENT_WARNINGS: Record<string, string> = {
   Address:
-    "Address now commonly receives `chain` and optional `blockExplorerAddressLink`. Follow the Hardhat localhost pattern if you want clickable explorer links when running locally.",
+    "Address now commonly receives `chain` and optional `blockExplorerAddressLink`. Follow the Hardhat localhost pattern if you want clickable explorer links when running locally. See example: https://github.com/scaffold-eth/scaffold-eth-2/blob/ffcbd82332729521e5ecba5fc52f9c14f93efa64/packages/nextjs/app/page.tsx#L25",
   EtherInput:
-    "EtherInput exposes `onValueChange({ valueInEth })` instead of the legacy string-based `onChange`. Update handlers accordingly.",
+    "EtherInput exposes `onValueChange({ valueInEth })` instead of the legacy string-based `onChange`. Update handlers accordingly. See example: https://github.com/scaffold-eth/scaffold-eth-2/blob/ffcbd82332729521e5ecba5fc52f9c14f93efa64/packages/nextjs/components/scaffold-eth/Faucet.tsx#L121-L126",
 };
 
 const WARN_ON_COMPONENTS = new Set(Object.keys(COMPONENT_WARNINGS));
