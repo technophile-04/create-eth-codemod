@@ -2,6 +2,7 @@
   "name": "create-eth-codemod",
   "version": "0.1.0",
   "description": "Codemods for create-eth extensions",
+  "main": "dist/cli.js",
   "type": "module",
   "bin": {
     "create-eth-codemod": "bin/create-eth-codemod.js",
@@ -13,7 +14,7 @@
     "lint": "eslint src --ext .ts",
     "format": "prettier --write .",
     "type-check": "tsc --noEmit",
-    "migrate-scaffold-ui": "node dist/migrate-scaffold-ui-imports.js",
+    "migrate-scaffold-ui": "node dist/cli.js migrate-scaffold-ui-imports",
     "changeset": "changeset",
     "changeset:release": "yarn build && changeset publish"
   },

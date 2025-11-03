@@ -10,9 +10,11 @@ Rewrites legacy `~~/components/scaffold-eth` imports to the new `@scaffold-ui` p
 
 ```bash
 yarn build
-yarn migrate-scaffold-ui <path-to-extension> --dry-run # review planned changes
-yarn migrate-scaffold-ui <path-to-extension>
+npx create-eth-codemod migrate-scaffold-ui-imports <path-to-extension> --dry-run # review planned changes
+npx create-eth-codemod migrate-scaffold-ui-imports <path-to-extension>
 ```
+
+The legacy direct entry point (`yarn migrate-scaffold-ui <path>`) still works if you prefer to wire it into your own scripts.
 
 The script currently handles:
 

@@ -7,6 +7,7 @@ const external = ["fs", "fs/promises", "path"];
 
 export default {
   input: {
+    cli: "src/cli.ts",
     "migrate-scaffold-ui-imports": "src/migrate-scaffold-ui-imports.ts",
   },
   output: {
