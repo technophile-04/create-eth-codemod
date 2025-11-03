@@ -20,6 +20,7 @@ The script currently handles:
 
 - `~~/components/scaffold-eth`, `~~/components/scaffold-eth/Input`, `~~/components/scaffold-eth/Input/AddressInput`, `~~/components/scaffold-eth/Address/Address` → `@scaffold-ui/components`
 - Renames `InputBase` specifiers to `BaseInput` and keeps the original alias (`{ BaseInput as InputBase }`) for backwards compatibility.
+- Emits targeted warnings when `Address`, `EtherInput`, or `isENS` remain so you can apply the manual follow-up steps.
 
 Use `--dry-run` first to preview changes. After applying the codemod, re-run the relevant type checks in your extension to confirm everything builds.
 

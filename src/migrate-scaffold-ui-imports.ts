@@ -56,6 +56,28 @@ const COMPONENT_SPECIFIER_RENAMES: Record<string, SpecifierRenameRule> = {
   InputBase: { newName: "BaseInput", keepAlias: true },
 };
 
+const COMPONENT_WARNINGS: Record<string, string> = {
+  Address:
+    "Address now commonly receives `chain` and optional `blockExplorerAddressLink`. Follow the Hardhat localhost pattern if you want clickable explorer links when running locally.",
+  EtherInput:
+    "EtherInput exposes `onValueChange({ valueInEth })` instead of the legacy string-based `onChange`. Update handlers accordingly.",
+};
+
+const WARN_ON_COMPONENTS = new Set(Object.keys(COMPONENT_WARNINGS));
+
+const IDENTIFIER_WARNINGS: Array<{
+  id: string;
+  regex: RegExp;
+  message: string;
+}> = [
+  {
+    id: "isENS",
+    regex: /\bisENS\b/,
+    message:
+      "`isENS` now lives at `~~/utils/scaffold-eth/common`. Update imports to point there.",
+  },
+];
+
 const RAW_PATH_REPLACEMENTS: Array<[string, string]> = [
   ["~~/components/scaffold-eth/Input/AddressInput", COMPONENT_TARGET],
   ["~~/components/scaffold-eth/Input/EtherInput", COMPONENT_TARGET],
@@ -149,9 +171,10 @@ async function main(rawArgs: string[]) {
 
   let filesChanged = 0;
   const changeSummary: string[] = [];
+  const warningsByFile: Array<{ file: string; messages: string[] }> = [];
 
   for (const filePath of filesToProcess) {
-    const { changed, summary } = await processFile(filePath, dryRun);
+    const { changed, summary, warnings } = await processFile(filePath, dryRun);
     if (changed) {
       filesChanged += 1;
       changeSummary.push(
@@ -159,6 +182,13 @@ async function main(rawArgs: string[]) {
           (line) => `${path.relative(process.cwd(), filePath)}: ${line}`
         )
       );
+    }
+
+    if (warnings.length > 0) {
+      warningsByFile.push({
+        file: path.relative(process.cwd(), filePath),
+        messages: warnings,
+      });
     }
   }
 
@@ -172,6 +202,19 @@ async function main(rawArgs: string[]) {
   if (changeSummary.length > 0) {
     console.log("\nChanges:");
     changeSummary.forEach((line) => console.log(`  • ${line}`));
+  }
+
+  if (warningsByFile.length > 0) {
+    console.log(`\n${chalk.yellow("Warnings:")}`);
+    for (const { file, messages } of warningsByFile) {
+      console.log(`  • ${file}`);
+      for (const message of messages) {
+        const lines = message.split("\n");
+        for (const line of lines) {
+          console.log(`      ${line}`);
+        }
+      }
+    }
   }
 }
 
@@ -213,7 +256,7 @@ async function collectFilesRecursively(
 
 async function processFile(filePath: string, dryRun: boolean) {
   const originalContent = await fs.readFile(filePath, "utf8");
-  const { updatedContent, summary } = transformContent(
+  const { updatedContent, summary, warnings } = transformContent(
     originalContent,
     filePath
   );
@@ -223,11 +266,14 @@ async function processFile(filePath: string, dryRun: boolean) {
     await fs.writeFile(filePath, updatedContent, "utf8");
   }
 
-  return { changed, summary };
+  return { changed, summary, warnings };
 }
 
 function transformContent(content: string, filePath: string) {
   const summary: string[] = [];
+  const warnings: string[] = [];
+  const flaggedComponents = new Set<string>();
+  const triggeredWarningIds = new Set<string>();
   let updated = content;
 
   const importMatches = Array.from(updated.matchAll(IMPORT_REGEX));
@@ -236,6 +282,12 @@ function transformContent(content: string, filePath: string) {
     const legacyPath = match[1];
     const analysis = analyzeImportStatement(fullStatement, legacyPath);
     if (!analysis) continue;
+
+    for (const specifier of analysis.specifiers) {
+      if (WARN_ON_COMPONENTS.has(specifier)) {
+        flaggedComponents.add(specifier);
+      }
+    }
 
     const { appliedTransform, updated: rewritten } = analysis;
     if (appliedTransform && rewritten !== fullStatement) {
@@ -265,7 +317,22 @@ function transformContent(content: string, filePath: string) {
     }
   }
 
-  return { updatedContent: updated, summary };
+  for (const component of flaggedComponents) {
+    const message = COMPONENT_WARNINGS[component];
+    if (message && !triggeredWarningIds.has(component)) {
+      warnings.push(message);
+      triggeredWarningIds.add(component);
+    }
+  }
+
+  for (const { id, regex, message } of IDENTIFIER_WARNINGS) {
+    if (regex.test(updated) && !triggeredWarningIds.has(id)) {
+      warnings.push(message);
+      triggeredWarningIds.add(id);
+    }
+  }
+
+  return { updatedContent: updated, summary, warnings };
 }
 
 function analyzeImportStatement(
