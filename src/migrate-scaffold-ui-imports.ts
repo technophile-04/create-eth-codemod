@@ -62,7 +62,6 @@ const RAW_PATH_REPLACEMENTS: Array<[string, string]> = [
   ["~~/components/scaffold-eth/Input", COMPONENT_TARGET],
   ["~~/components/scaffold-eth/Address/Address", COMPONENT_TARGET],
   ["~~/components/scaffold-eth/Address", COMPONENT_TARGET],
-  ["~~/components/scaffold-eth/styles.css", `${COMPONENT_TARGET}/styles.css`],
 ];
 
 const SUPPORTED_CODE_EXTENSIONS = new Set([
@@ -79,7 +78,14 @@ const SUPPORTED_CODE_EXTENSIONS = new Set([
   ".mdx",
 ]);
 
-const IGNORED_DIRECTORIES = new Set(["node_modules", ".git", "dist", ".next", "build", "out"]);
+const IGNORED_DIRECTORIES = new Set([
+  "node_modules",
+  ".git",
+  "dist",
+  ".next",
+  "build",
+  "out",
+]);
 
 const IMPORT_REGEX = /import\s+[\s\S]*?from\s+["']([^"']+)["'];?/g;
 const EXPORT_FROM_REGEX = /export\s+[\s\S]*?from\s+["']([^"']+)["'];?/g;
@@ -91,7 +97,7 @@ async function main(rawArgs: string[]) {
       "--help": Boolean,
       "-h": "--help",
     },
-    { argv: rawArgs.slice(2) },
+    { argv: rawArgs.slice(2) }
   );
 
   if (args["--help"]) {
@@ -101,7 +107,9 @@ async function main(rawArgs: string[]) {
 
   const targetPath = args._[0];
   if (!targetPath) {
-    console.error(chalk.red("✖ Missing target path. Run with --help for usage."));
+    console.error(
+      chalk.red("✖ Missing target path. Run with --help for usage.")
+    );
     process.exitCode = 1;
     return;
   }
@@ -125,13 +133,17 @@ async function main(rawArgs: string[]) {
   } else if (stats.isFile()) {
     filesToProcess.push(absoluteTarget);
   } else {
-    console.error(chalk.red("✖ Provided path is neither a file nor a directory."));
+    console.error(
+      chalk.red("✖ Provided path is neither a file nor a directory.")
+    );
     process.exitCode = 1;
     return;
   }
 
   if (filesToProcess.length === 0) {
-    console.log(chalk.yellow("⚠ No files found matching supported extensions."));
+    console.log(
+      chalk.yellow("⚠ No files found matching supported extensions.")
+    );
     return;
   }
 
@@ -142,16 +154,24 @@ async function main(rawArgs: string[]) {
     const { changed, summary } = await processFile(filePath, dryRun);
     if (changed) {
       filesChanged += 1;
-      changeSummary.push(...summary.map(line => `${path.relative(process.cwd(), filePath)}: ${line}`));
+      changeSummary.push(
+        ...summary.map(
+          (line) => `${path.relative(process.cwd(), filePath)}: ${line}`
+        )
+      );
     }
   }
 
-  const header = dryRun ? chalk.cyan("Dry run complete") : chalk.green("Codemod complete");
+  const header = dryRun
+    ? chalk.cyan("Dry run complete")
+    : chalk.green("Codemod complete");
   console.log(`\n${header}`);
-  console.log(`${filesChanged} file${filesChanged === 1 ? "" : "s"} updated${dryRun ? " (simulated)" : ""}.`);
+  console.log(
+    `${filesChanged} file${filesChanged === 1 ? "" : "s"} updated${dryRun ? " (simulated)" : ""}.`
+  );
   if (changeSummary.length > 0) {
     console.log("\nChanges:");
-    changeSummary.forEach(line => console.log(`  • ${line}`));
+    changeSummary.forEach((line) => console.log(`  • ${line}`));
   }
 }
 
@@ -168,7 +188,10 @@ Options:
 `);
 }
 
-async function collectFilesRecursively(targetDir: string, accumulator: string[]) {
+async function collectFilesRecursively(
+  targetDir: string,
+  accumulator: string[]
+) {
   const dirEntries = await fs.readdir(targetDir, { withFileTypes: true });
   for (const entry of dirEntries) {
     if (IGNORED_DIRECTORIES.has(entry.name)) continue;
@@ -190,7 +213,10 @@ async function collectFilesRecursively(targetDir: string, accumulator: string[])
 
 async function processFile(filePath: string, dryRun: boolean) {
   const originalContent = await fs.readFile(filePath, "utf8");
-  const { updatedContent, summary } = transformContent(originalContent, filePath);
+  const { updatedContent, summary } = transformContent(
+    originalContent,
+    filePath
+  );
 
   const changed = updatedContent !== originalContent;
   if (changed && !dryRun) {
@@ -242,9 +268,14 @@ function transformContent(content: string, filePath: string) {
   return { updatedContent: updated, summary };
 }
 
-function analyzeImportStatement(fullStatement: string, legacyPath: string): ImportAnalysis | undefined {
+function analyzeImportStatement(
+  fullStatement: string,
+  legacyPath: string
+): ImportAnalysis | undefined {
   const namedSectionMatch = fullStatement.match(/\{([\s\S]*?)\}/);
-  const namedResult = namedSectionMatch ? parseNamedImports(namedSectionMatch[1]) : undefined;
+  const namedResult = namedSectionMatch
+    ? parseNamedImports(namedSectionMatch[1])
+    : undefined;
   const specifiers = namedResult?.specifiers ?? [];
   const defaultImport = extractDefaultImport(fullStatement);
   if (defaultImport) {
@@ -264,8 +295,14 @@ function analyzeImportStatement(fullStatement: string, legacyPath: string): Impo
   let updatedStatement = fullStatement.replace(legacyPath, transform.newPath);
 
   if (namedSectionMatch && transform.renameSpecifiers && namedResult) {
-    const updatedBraceContent = buildNamedImport(namedResult.entries, transform.renameSpecifiers);
-    updatedStatement = updatedStatement.replace(namedSectionMatch[0], `{${updatedBraceContent}}`);
+    const updatedBraceContent = buildNamedImport(
+      namedResult.entries,
+      transform.renameSpecifiers
+    );
+    updatedStatement = updatedStatement.replace(
+      namedSectionMatch[0],
+      `{${updatedBraceContent}}`
+    );
   }
 
   return {
@@ -277,13 +314,18 @@ function analyzeImportStatement(fullStatement: string, legacyPath: string): Impo
   };
 }
 
-function determineTransform(legacyPath: string, specifiers: string[]): ImportTransform | undefined {
+function determineTransform(
+  legacyPath: string,
+  specifiers: string[]
+): ImportTransform | undefined {
   if (!legacyPath.startsWith("~~/components/scaffold-eth")) {
     return undefined;
   }
 
   if (legacyPath === "~~/components/scaffold-eth") {
-    const usesLegacyComponent = specifiers.some(specifier => LEGACY_COMPONENT_SPECIFIERS.has(specifier));
+    const usesLegacyComponent = specifiers.some((specifier) =>
+      LEGACY_COMPONENT_SPECIFIERS.has(specifier)
+    );
     if (!usesLegacyComponent) {
       return undefined;
     }
@@ -331,7 +373,9 @@ function parseNamedImports(content: string): NamedImportParseResult {
     }
 
     const leadingWhitespace = specText.slice(0, specText.indexOf(trimmed));
-    const trailingWhitespace = specText.slice(specText.indexOf(trimmed) + trimmed.length);
+    const trailingWhitespace = specText.slice(
+      specText.indexOf(trimmed) + trimmed.length
+    );
 
     let isType = false;
     let rest = trimmed;
@@ -365,16 +409,22 @@ function parseNamedImports(content: string): NamedImportParseResult {
   return { entries, specifiers };
 }
 
-function buildNamedImport(entries: NamedImportEntry[], renameMap: Record<string, SpecifierRenameRule>) {
+function buildNamedImport(
+  entries: NamedImportEntry[],
+  renameMap: Record<string, SpecifierRenameRule>
+) {
   return entries
-    .map(entry => {
+    .map((entry) => {
       if (!entry.spec) {
         return entry.raw;
       }
 
       const rule = renameMap[entry.spec.imported];
       const imported = rule ? rule.newName : entry.spec.imported;
-      const alias = rule ? (entry.spec.alias ?? (rule.keepAlias ? entry.spec.imported : undefined)) : entry.spec.alias;
+      const alias = rule
+        ? (entry.spec.alias ??
+          (rule.keepAlias ? entry.spec.imported : undefined))
+        : entry.spec.alias;
 
       let specText = entry.spec.isType ? `type ${imported}` : imported;
       if (alias) {
@@ -406,7 +456,7 @@ function getExtension(fileName: string) {
   return path.extname(fileName);
 }
 
-main(process.argv).catch(error => {
+main(process.argv).catch((error) => {
   console.error(chalk.red("✖ Codemod failed"));
   console.error(error);
   process.exitCode = 1;
