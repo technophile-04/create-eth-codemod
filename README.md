@@ -9,9 +9,14 @@ Standalone codemod utilities for [`create-eth`](https://github.com/scaffold-eth/
 Rewrites legacy `~~/components/scaffold-eth` imports to the new `@scaffold-ui` packages. This is helpful when updating third-party extensions to Scaffold-ETH's scaffold-ui transition.
 
 ```bash
-yarn build
-npx create-eth-codemod migrate-scaffold-ui-imports <path-to-extension> --dry-run # review planned changes
-npx create-eth-codemod migrate-scaffold-ui-imports <path-to-extension>
+npx create-eth-codemod@latest migrate-scaffold-ui-imports <path-to-extension> --dry-run # review planned changes
+npx create-eth-codemod@lateset migrate-scaffold-ui-imports <path-to-extension>
+```
+
+Example: 
+
+```
+npx create-eth-codemod@latest migrate-scaffold-ui-imports .
 ```
 
 The legacy direct entry point (`yarn migrate-scaffold-ui <path>`) still works if you prefer to wire it into your own scripts.
